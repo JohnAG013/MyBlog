@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My GitHub Blog | Premium Experience</title>
+    <meta name="description"
+        content="Мой персональный блог на GitHub с современным дизайном и возможностью редактирования через телефон.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <a href="index.html" class="logo">DevBlog</a>
+        <nav class="nav-links">
+            <button class="theme-toggle" id="themeToggle" title="Переключить тему">
+                <i data-lucide="sun" id="theme-icon"></i>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>Мысли в коде</h1>
+            <p>Добро пожаловать в мой цифровой сад. Здесь я делюсь идеями, новостями и опытом.</p>
+        </section>
+
+        <div id="posts-container" class="posts-grid">
+            <!-- Posts will be loaded here via JS -->
+            <div class="loading">Загрузка постов...</div>
+        </div>
+    </main>
+
+    <!-- Modal for Full Post -->
+    <div id="postModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <div id="modalBody" class="modal-body">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateIcon(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateIcon(newTheme);
+        });
+
+        function updateIcon(theme) {
+            themeIcon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+            lucide.createIcons(); // Re-render icons
+        }
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        let allPosts = [];
+
+        // Sample logic for fetching posts
+        async function loadPosts() {
+            const container = document.getElementById('posts-container');
+            try {
+                const response = await fetch('posts.json');
+                if (!response.ok) throw new Error('No posts found');
+                allPosts = await response.json();
+
+                if (allPosts.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; opacity:0.5;">Записей не найдено</p>';
+                    return;
+                }
+
+                container.innerHTML = allPosts.map(post => `
+                    <article class="post-card" onclick="openPost(${post.id})">
+                        ${post.image ? `
+                            <div class="post-image-container">
+                                <img src="${post.image}" alt="${post.title}" class="post-card-image">
+                            </div>
+                        ` : ''}
+                        <div class="post-content-wrapper">
+                            <span class="post-date">${new Date(post.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                            <h2 class="post-title">${post.title}</h2>
+                            <p class="post-excerpt">${post.content.substring(0, 150)}${post.content.length > 150 ? '...' : ''}</p>
+                            <div style="color: var(--accent-color); font-weight: 600;">Читать далее →</div>
+                        </div>
+                    </article>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = '<p style="text-align:center; opacity:0.5;">Записей не найдено</p>';
+            }
+        }
+
+        function openPost(id) {
+            const post = allPosts.find(p => p.id === id);
+            if (!post) return;
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                ${post.image ? `<img src="${post.image}" class="modal-main-image">` : ''}
+                <span class="post-date" style="color: var(--accent-color); font-weight: 600;">${new Date(post.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                <h2 style="font-size: 2.5rem; margin-top: 0.5rem;">${post.title}</h2>
+                <div class="full-text" style="white-space: pre-wrap; margin-top: 1.5rem; font-size: 1.1rem; line-height: 1.7;">${post.content}</div>
+            `;
+
+            document.getElementById('postModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('postModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        window.onclick = (event) => {
+            const modal = document.getElementById('postModal');
+            if (event.target === modal) closeModal();
+        };
+
+        loadPosts();
+    </script>
+</body>
+
+</html>
