@@ -87,7 +87,8 @@
         async function loadPosts() {
             const container = document.getElementById('posts-container');
             try {
-                const response = await fetch('posts.json');
+                // Добавляем ?t=... , чтобы браузер не брал файл из кэша
+                const response = await fetch(`posts.json?t=${new Date().getTime()}`);
                 if (!response.ok) throw new Error('No posts found');
                 allPosts = await response.json();
 
